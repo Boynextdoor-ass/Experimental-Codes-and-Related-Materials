@@ -3,18 +3,18 @@ import numpy as np
 import cv2
 import matplotlib.pyplot as plt
 
-# 解决Matplotlib中文显示问题
+
 plt.rcParams["font.family"] = ["SimHei", "Microsoft YaHei", "Arial"]
 plt.rcParams["axes.unicode_minus"] = False
 
-# 图像加载与预处理
+
 def load_and_preprocess(image_path):
     img = cv2.imread(image_path)
     img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)# 转为灰度图
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     return img_rgb, gray
 
-# ORB特征匹配
+
 def estimate_shake_matrix(gray_clear, gray_blur):
 
     orb = cv2.ORB_create(nfeatures=2000, scaleFactor=1.2, patchSize=31)
@@ -31,28 +31,28 @@ def estimate_shake_matrix(gray_clear, gray_blur):
     pts_clear = np.float32([kp_clear[m.queryIdx].pt for m in matches]).reshape(-1, 1, 2)
     pts_blur = np.float32([kp_blur[m.trainIdx].pt for m in matches]).reshape(-1, 1, 2)
 
-    M, mask = cv2.estimateAffine2D(pts_blur, pts_clear, cv2.RANSAC, ransacReprojThreshold=5.0)# 手抖矩阵
+    M, mask = cv2.estimateAffine2D(pts_blur, pts_clear, cv2.RANSAC, ransacReprojThreshold=5.0)
 
     return M, matches, kp_clear, kp_blur, mask
-# 图像校正
+
 def correct_shake_image(img_blur, M, clear_img_shape):
     corrected_img = cv2.warpAffine(img_blur, M, (clear_img_shape[1], clear_img_shape[0]))
     return corrected_img
 
-# 计算PSNR
+
 def calculate_psnr(img_clear, img_corrected):
     mse = np.mean((img_clear.astype(np.float32) - img_corrected.astype(np.float32)) ** 2)
     max_pixel = 255
     psnr = 20 * np.log10(max_pixel / np.sqrt(mse))
     return psnr
-# 结果可视化
+
 def visualize_results(img_clear, img_blur, img_corrected, matches, kp_clear, kp_blur, mask, M, psnr):
     mask_list = mask.ravel().tolist()
     match_img = cv2.drawMatches(
         img_clear, kp_clear, img_blur, kp_blur, matches, None,
         matchColor=(0, 255, 0), singlePointColor=None, matchesMask=mask_list, flags=2
     )
-    # 创建画布
+
     plt.figure(figsize=(16, 8))
     plt.subplot(2, 2, 1)
     plt.imshow(match_img)
@@ -75,10 +75,10 @@ def visualize_results(img_clear, img_blur, img_corrected, matches, kp_clear, kp_
     print("手抖矩阵：")
     print(M)
     #print(f"\nPSNR值：PSNR = {psnr:.2f}dB")
-# 主程序
+
 if __name__ == "__main__":
-    clear_image_path = r"D:\pycharm\PythonProject\blurr.png"  # 原始清晰图像路径
-    blur_image_path = r"D:\pycharm\PythonProject\clear.png"   # 手抖模糊图像路径
+    clear_image_path = r"D:\pycharm\PythonProject\blurr.png" 
+    blur_image_path = r"D:\pycharm\PythonProject\clear.png"  
     img_clear, gray_clear = load_and_preprocess(clear_image_path)
     img_blur, gray_blur = load_and_preprocess(blur_image_path)
     shake_matrix, matches, kp_clear, kp_blur, mask = estimate_shake_matrix(gray_clear, gray_blur)
